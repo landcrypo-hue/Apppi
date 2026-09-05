@@ -1,0 +1,35 @@
+{
+  "appId": "eservices-pi-app",
+  "name": "Eservices",
+  "version": "1.0.0",
+  "description": "All-in-one digital services platform with document lookup, administrative guidance, payments, and AI assistance",
+  "developer": {
+    "name": "Eservices Team",
+    "email": "support@eservices5527.pinet.com",
+    "website": "https://eservices5527.pinet.com"
+  },
+  "icon": "https://eservices5527.pinet.com/logo.png",
+  "frontendUrl": "https://eservices5527.pinet.com",
+  "backendUrl": "https://eservices5527.pinet.com/api",
+  "redirectUris": [
+    "https://eservices5527.pinet.com/auth/callback",
+    "https://eservices5527.pinet.com/payments/callback"
+  ],
+  "permissions": ["username", "payments", "wallet_address"],
+  "sandbox": {
+    "enabled": true,
+    "testnetUrl": "https://eservices5527.pinet.com"
+  },
+  "payments": {
+    "enabled": true,
+    "currency": "PI",
+    "minAmount": 0.01,
+    "maxAmount": 1000
+  },
+  "categories": ["utilities", "services", "productivity"],
+  "screenshots": [
+    "https://eservices5527.pinet.com/screenshots/home.png",
+    "https://eservices5527.pinet.com/screenshots/services.png",
+    "https://eservices5527.pinet.com/screenshots/payments.png"
+  ]
+}

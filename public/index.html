@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Eservices – Pi Network App</title>
+
+  <!-- ============================================================
+       STEP 1: Pi SDK — MUST be first, in <head>, no defer/async
+  ============================================================ -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:      #275df1;
+      --primary-dark: #1a46c4;
+      --accent:       #06b6d4;
+      --bg:           #f4f6fb;
+      --card:         #ffffff;
+      --border:       #e2e8f0;
+      --text:         #1e293b;
+      --muted:        #64748b;
+      --success:      #16a34a;
+      --error:        #dc2626;
+      --warning:      #d97706;
+      --pi-gold:      #f5a623;
+      --radius:       12px;
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    /* ── Utility ──────────────────────────────────────────── */
+    .hidden  { display: none !important; }
+    .flex    { display: flex; }
+    .col     { flex-direction: column; }
+    .center  { align-items: center; justify-content: center; }
+    .gap-2   { gap: 8px; }
+    .gap-3   { gap: 12px; }
+    .gap-4   { gap: 16px; }
+    .text-sm { font-size: 14px; }
+    .text-xs { font-size: 12px; }
+    .bold    { font-weight: 700; }
+    .muted   { color: var(--muted); }
+
+    /* ── Header ───────────────────────────────────────────── */
+    #app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      padding: 0 16px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-text h1  { font-size: 16px; font-weight: 700; line-height: 1; }
+    .logo-text p   { font-size: 11px; color: var(--muted); }
+
+    /* ── Buttons ──────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-primary  { background: var(--primary); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+    .btn-outline  { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-pi       { background: var(--pi-gold); color: #1a1a1a; }
+    .btn-pi:hover:not(:disabled) { background: #e09615; }
+    .btn-danger   { background: var(--error); color: white; }
+    .btn-sm       { padding: 6px 12px; font-size: 13px; }
+    .btn-full     { width: 100%; }
+
+    /* ── Cards ────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    /* ── Main scroll area ─────────────────────────────────── */
+    #main-content {
+      padding: 16px;
+      padding-bottom: 90px;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── SDK Status Banner ────────────────────────────────── */
+    #sdk-banner {
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    #sdk-banner.connecting { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+    #sdk-banner.ready      { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+    #sdk-banner.error      { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.yellow { background: var(--warning); animation: pulse 1.2s infinite; }
+    .dot.green  { background: var(--success); }
+    .dot.red    { background: var(--error); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Hero ─────────────────────────────────────────────── */
+    #hero-card {
+      border: 2px solid rgba(39,93,241,0.2);
+      background: linear-gradient(135deg, rgba(39,93,241,0.04), #fff, rgba(6,182,212,0.04));
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #hero-card h2 { font-size: 24px; font-weight: 800; }
+    #hero-card p  { font-size: 14px; color: var(--muted); max-width: 320px; }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* ── Auth Box ─────────────────────────────────────────── */
+    #auth-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    #auth-message {
+      font-size: 13px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    /* ── Logged-In User Card ──────────────────────────────── */
+    #user-card {
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #user-card .label { font-size: 12px; opacity: 0.8; }
+    #user-card .username { font-size: 22px; font-weight: 800; }
+    #user-card .credits { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+
+    /* ── Services Grid ────────────────────────────────────── */
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .service-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .service-item:hover  { border-color: var(--primary); }
+    .service-item:active { transform: scale(0.97); }
+
+    .service-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .service-item h3  { font-size: 13px; font-weight: 600; line-height: 1.3; }
+    .service-item p   { font-size: 11px; color: var(--muted); }
+    .service-item .fee{
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--pi-gold);
+      background: rgba(245,166,35,0.12);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    /* ── Payment Modal ────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 40px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: slide-up 0.25s ease;
+    }
+
+    @keyframes slide-up {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto -8px;
+    }
+
+    .modal h3 { font-size: 18px; font-weight: 700; }
+
+    .pay-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .pay-row:last-of-type { border-bottom: none; }
+    .pay-row .val { font-weight: 700; }
+    .pay-row .pi  { color: var(--pi-gold); font-size: 18px; }
+
+    #payment-status-box {
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      text-align: center;
+    }
+    #payment-status-box.pending   { background: #fef9c3; color: #854d0e; }
+    #payment-status-box.success   { background: #dcfce7; color: #14532d; }
+    #payment-status-box.cancelled { background: #fef9c3; color: #854d0e; }
+    #payment-status-box.error     { background: #fee2e2; color: #7f1d1d; }
+
+    /* ── Diagnostics Panel ────────────────────────────────── */
+    #diagnostics {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .diag-header {
+      background: var(--primary);
+      color: white;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .diag-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .diag-row:last-child { border-bottom: none; }
+
+    .diag-val {
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+    .diag-val.yes { background: #dcfce7; color: #14532d; }
+    .diag-val.no  { background: #fee2e2; color: #7f1d1d; }
+
+    /* ── Bottom Navigation ────────────────────────────────── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: rgba(255,255,255,0.97);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      height: 64px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 12px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 500;
+      transition: color 0.2s;
+      border-radius: 8px;
+    }
+    .nav-btn:hover, .nav-btn.active { color: var(--primary); }
+    .nav-btn svg { width: 22px; height: 22px; }
+
+    /* ── Spinner ──────────────────────────────────────────── */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    .spinner.dark {
+      border-color: rgba(39,93,241,0.3);
+      border-top-color: var(--primary);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────── -->
+  <header id="app-header">
+    <div class="logo">
+      <div class="logo-icon">E</div>
+      <div class="logo-text">
+        <h1>Eservices</h1>
+        <p>Pi Powered</p>
+      </div>
+    </div>
+    <div id="header-auth">
+      <button class="btn btn-primary btn-sm" id="btn-header-login" onclick="loginWithPi()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12h6M12 9v6"/></svg>
+        Login with Pi
+      </button>
+      <div id="header-user" class="hidden flex gap-2 items-center">
+        <svg width="18" height="18" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span id="header-username" style="font-weight:600;font-size:14px;"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main ────────────────────────────────────────────── -->
+  <main id="main-content">
+
+    <!-- SDK Status Banner -->
+    <div id="sdk-banner" class="connecting">
+      <div class="dot yellow" id="sdk-dot"></div>
+      <span id="sdk-banner-text">Loading Pi SDK...</span>
+    </div>
+
+    <!-- Hero (shown when not authenticated) -->
+    <div id="hero-card">
+      <div class="logo-icon" style="width:56px;height:56px;font-size:26px;border-radius:14px;">E</div>
+      <h2>Eservices</h2>
+      <p>All-in-one digital services platform powered exclusively by Pi Network</p>
+
+      <div class="badge-row">
+        <span class="badge">&#128274; Blockchain Secured</span>
+        <span class="badge">&#960; 0.25 Pi per Service</span>
+        <span class="badge">&#127760; EN / FR / AR</span>
+      </div>
+
+      <div id="auth-box">
+        <div id="auth-message">Initializing Pi Network...</div>
+        <button id="btn-login" class="btn btn-primary btn-full" onclick="loginWithPi()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Login with Pi Network
+        </button>
+        <p class="text-xs muted">Open in Pi Browser for full access</p>
+      </div>
+    </div>
+
+    <!-- User Card (shown after login) -->
+    <div id="user-card" class="hidden">
+      <span class="label">Logged in as</span>
+      <span class="username" id="display-username"></span>
+      <span class="credits" id="display-credits"></span>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;flex:1;" onclick="openPayModal('Pi Wallet Top-up', 1.0, 'wallet-topup')">
+          &#960; Pi Wallet
+        </button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;flex:1;" onclick="showSection('requests')">
+          &#128196; My Requests
+        </button>
+      </div>
+    </div>
+
+    <!-- Services Grid -->
+    <div id="section-home">
+      <div class="section-title">All Services</div>
+      <p class="text-sm muted" style="margin-bottom:12px;">Pay securely with Pi Network</p>
+
+      <div class="services-grid">
+        <div class="service-item" onclick="requireAuth(() => openPayModal('Birth Certificate', 0.25, 'birth-certificate'))">
+          <div class="service-icon" style="background:#eff6ff;">&#128196;</div>
+          <h3>Birth Certificate</h3>
+          <p>Official document</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+
+        <div class="service-item" onclick="requireAuth(() => openPayModal('Residence Attestation', 0.25, 'residence'))">
+          <div class="service-icon" style="background:#f0fdf4;">&#127968;</div>
+          <h3>Residence Proof</h3>
+          <p>Address attestation</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+
+        <div class="service-item" onclick="requireAuth(() => openPayModal('Tax Statement', 0.25, 'tax'))">
+          <div class="service-icon" style="background:#fefce8;">&#128184;</div>
+          <h3>Tax Statement</h3>
+          <p>Compliance certificate</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+
+        <div class="service-item" onclick="requireAuth(() => openPayModal('Criminal Record', 0.25, 'criminal-record'))">
+          <div class="service-icon" style="background:#fdf4ff;">&#128274;</div>
+          <h3>Criminal Record</h3>
+          <p>Background check</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+
+        <div class="service-item" onclick="requireAuth(() => openPayModal('RC Lookup', 0.25, 'rc-lookup'))">
+          <div class="service-icon" style="background:#fff7ed;">&#127970;</div>
+          <h3>Company RC</h3>
+          <p>Business registry</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+
+        <div class="service-item" onclick="requireAuth(() => openPayModal('ICE Certificate', 0.25, 'ice'))">
+          <div class="service-icon" style="background:#f0fdfa;">&#127981;</div>
+          <h3>ICE Certificate</h3>
+          <p>Business ID</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+
+        <div class="service-item" onclick="requireAuth(() => openPayModal('Electricity Bill', 0.25, 'electricity'))">
+          <div class="service-icon" style="background:#fefce8;">&#9889;</div>
+          <h3>Electricity</h3>
+          <p>Bill payment</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+
+        <div class="service-item" onclick="requireAuth(() => openPayModal('Water Bill', 0.25, 'water'))">
+          <div class="service-icon" style="background:#eff6ff;">&#128167;</div>
+          <h3>Water Bill</h3>
+          <p>Bill payment</p>
+          <span class="fee">0.25 Pi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SDK Diagnostics -->
+    <div id="diagnostics">
+      <div class="diag-header">
+        &#128270; Pi SDK Diagnostics
+      </div>
+      <div class="diag-row">
+        <span>SDK Script Loaded</span>
+        <span class="diag-val no" id="diag-script">NO</span>
+      </div>
+      <div class="diag-row">
+        <span>window.Pi Available</span>
+        <span class="diag-val no" id="diag-window">NO</span>
+      </div>
+      <div class="diag-row">
+        <span>SDK Initialized</span>
+        <span class="diag-val no" id="diag-init">NO</span>
+      </div>
+      <div class="diag-row">
+        <span>Sandbox Mode (Testnet)</span>
+        <span class="diag-val no" id="diag-sandbox">NO</span>
+      </div>
+      <div class="diag-row">
+        <span>User Authenticated</span>
+        <span class="diag-val no" id="diag-auth">NO</span>
+      </div>
+      <div class="diag-row">
+        <span>Pi Browser Detected</span>
+        <span class="diag-val no" id="diag-browser">NO</span>
+      </div>
+    </div>
+
+    <p class="text-xs muted" style="text-align:center;padding-bottom:8px;">
+      Eservices v2.0 &bull; Pi Network Powered &bull;
+      <a href="https://minepi.com" target="_blank" style="color:var(--primary);">Join Pi</a>
+    </p>
+
+  </main>
+
+  <!-- ── Bottom Nav ───────────────────────────────────────── -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" onclick="showSection('home')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+      Home
+    </button>
+    <button class="nav-btn" onclick="showSection('documents')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Documents
+    </button>
+    <button class="nav-btn" onclick="requireAuth(() => openPayModal('Service Payment', 0.25, 'general'))">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Pay Pi
+    </button>
+    <button class="nav-btn" onclick="showSection('support')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Support
+    </button>
+    <button class="nav-btn" onclick="showSection('profile')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profile
+    </button>
+  </nav>
+
+  <!-- ── Payment Modal ────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="pay-modal-overlay" onclick="closePayModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <h3>Pi Network Payment</h3>
+
+      <div>
+        <div class="pay-row">
+          <span class="muted">Service</span>
+          <span class="val" id="pay-service-name"></span>
+        </div>
+        <div class="pay-row">
+          <span class="muted">Amount</span>
+          <span class="val pi" id="pay-amount"></span>
+        </div>
+        <div class="pay-row">
+          <span class="muted">Account</span>
+          <span class="val" id="pay-username"></span>
+        </div>
+        <div class="pay-row">
+          <span class="muted">Network</span>
+          <span class="val" style="color:var(--success);">Sandbox (Testnet)</span>
+        </div>
+      </div>
+
+      <div id="payment-status-box" class="hidden"></div>
+
+      <div style="display:flex;gap:10px;" id="pay-action-row">
+        <button class="btn btn-outline flex-1" onclick="closePayModal()">Cancel</button>
+        <button class="btn btn-pi flex-1" id="btn-pay-confirm" onclick="confirmPayment()">
+          &#960; Pay Now
+        </button>
+      </div>
+
+      <div id="pay-done-row" class="hidden">
+        <button class="btn btn-primary btn-full" onclick="closePayModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       STEP 2: App Logic — Pi.init() + authenticate() + payments
+  ============================================================ -->
+  <script>
+    // ── State ────────────────────────────────────────────────
+    const state = {
+      sdkLoaded:     false,
+      sdkInitialized:false,
+      authenticated: false,
+      sandboxMode:   true,
+      piUser:        null,
+      currentPayment:{ service:'', amount:0, type:'' }
+    };
+
+    // ── Diagnostic updater ───────────────────────────────────
+    function updateDiag(id, value) {
+      const el = document.getElementById('diag-' + id);
+      if (!el) return;
+      el.textContent = value ? 'YES' : 'NO';
+      el.className = 'diag-val ' + (value ? 'yes' : 'no');
+    }
+
+    // ── SDK Banner updater ───────────────────────────────────
+    function setBanner(status, message) {
+      const banner = document.getElementById('sdk-banner');
+      const dot    = document.getElementById('sdk-dot');
+      const text   = document.getElementById('sdk-banner-text');
+
+      banner.className = 'connecting'; // reset
+      dot.className    = 'dot yellow';
+
+      if (status === 'ready') {
+        banner.className = 'ready';
+        dot.className    = 'dot green';
+      } else if (status === 'error') {
+        banner.className = 'error';
+        dot.className    = 'dot red';
+      }
+      text.textContent = message;
+    }
+
+    // ── Auth message updater ─────────────────────────────────
+    function setAuthMsg(msg) {
+      const el = document.getElementById('auth-message');
+      if (el) el.textContent = msg;
+    }
+
+    // ── STEP 2A: Init Pi SDK ─────────────────────────────────
+    function initPiSDK() {
+      setBanner('connecting', 'Loading Pi SDK...');
+      setAuthMsg('Initializing Pi Network...');
+
+      // Check Pi Browser
+      const isPiBrowser = /Pi Network/i.test(navigator.userAgent) ||
+                          typeof window.Pi !== 'undefined';
+      updateDiag('browser', isPiBrowser);
+
+      // Check if Pi SDK script loaded (window.Pi set by sdk.minepi.com)
+      if (typeof window.Pi === 'undefined') {
+        setBanner('error', 'Pi SDK not loaded — open in Pi Browser');
+        setAuthMsg('Open this app in Pi Browser to continue.');
+        updateDiag('script', false);
+        updateDiag('window', false);
+        return;
+      }
+
+      updateDiag('script', true);
+      updateDiag('window', true);
+      state.sdkLoaded = true;
+      setAuthMsg('Initializing SDK...');
+
+      try {
+        // ── Pi.init() — sandbox:true for Testnet ──────────────
+        Pi.init({ version: "2.0", sandbox: true });
+
+        state.sdkInitialized = true;
+        state.sandboxMode    = true;
+
+        updateDiag('init',    true);
+        updateDiag('sandbox', true);
+
+        setBanner('ready', 'Pi SDK Ready (Sandbox / Testnet)');
+        setAuthMsg('Tap "Login with Pi Network" to continue.');
+
+        // Show login button
+        const btn = document.getElementById('btn-login');
+        if (btn) btn.classList.remove('hidden');
+
+      } catch(err) {
+        setBanner('error', 'Pi.init() failed: ' + err.message);
+        setAuthMsg('SDK init error: ' + err.message);
+        updateDiag('init', false);
+      }
+    }
+
+    // ── STEP 2B: Authenticate ────────────────────────────────
+    async function loginWithPi() {
+      if (!state.sdkInitialized) {
+        alert('Pi SDK not ready. Please open this app inside Pi Browser.');
+        return;
+      }
+
+      const btnLogin  = document.getElementById('btn-login');
+      const btnHeader = document.getElementById('btn-header-login');
+
+      if (btnLogin)  { btnLogin.disabled  = true; btnLogin.innerHTML  = '<div class="spinner"></div> Authenticating...'; }
+      if (btnHeader) { btnHeader.disabled = true; btnHeader.textContent = 'Logging in...'; }
+
+      setAuthMsg('Authenticating with Pi Network...');
+
+      try {
+        // ── Pi.authenticate() — minimum required scopes ───────
+        const auth = await Pi.authenticate(
+          ['username', 'payments'],
+          // onIncompletePaymentFound callback
+          async function(payment) {
+            console.log('Incomplete payment found:', payment.identifier);
+            // Call your backend to handle it
+            await handleIncompletePayment(payment);
+          }
+        );
+
+        // Success
+        state.authenticated = true;
+        state.piUser = auth.user;
+
+        updateDiag('auth', true);
+        setBanner('ready', 'Authenticated as @' + auth.user.username);
+
+        onLoginSuccess(auth);
+
+      } catch(err) {
+        console.error('Pi authenticate error:', err);
+
+        let msg = 'Authentication failed.';
+        if (err.message && err.message.includes('cancelled')) msg = 'Login cancelled.';
+        else if (err.message) msg = 'Error: ' + err.message;
+
+        setBanner('error', msg);
+        setAuthMsg(msg + ' — Tap to retry.');
+
+        if (btnLogin)  { btnLogin.disabled  = false; btnLogin.innerHTML  = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Login with Pi Network'; }
+        if (btnHeader) { btnHeader.disabled = false; btnHeader.textContent = 'Login with Pi'; }
+      }
+    }
+
+    // ── Handle incomplete payment from previous session ──────
+    async function handleIncompletePayment(payment) {
+      try {
+        await fetch('/api/pi/complete-payment', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction?.txid })
+        });
+      } catch(e) {
+        console.warn('Could not complete old payment:', e.message);
+      }
+    }
+
+    // ── After successful login ───────────────────────────────
+    function onLoginSuccess(auth) {
+      // Hide hero, show user card
+      document.getElementById('hero-card').classList.add('hidden');
+      document.getElementById('user-card').classList.remove('hidden');
+      document.getElementById('header-user').classList.remove('hidden');
+      document.getElementById('btn-header-login').classList.add('hidden');
+
+      document.getElementById('display-username').textContent = '@' + auth.user.username;
+      document.getElementById('display-credits').textContent  = 'Pi Wallet: Connected';
+      document.getElementById('header-username').textContent  = '@' + auth.user.username;
+    }
+
+    // ── Guard: require auth before service ───────────────────
+    function requireAuth(fn) {
+      if (!state.authenticated) {
+        alert('Please login with Pi Network first.');
+        loginWithPi();
+        return;
+      }
+      fn();
+    }
+
+    // ── STEP 2C: Payment Flow ────────────────────────────────
+    function openPayModal(serviceName, amount, serviceType) {
+      state.currentPayment = { service: serviceName, amount, type: serviceType };
+
+      document.getElementById('pay-service-name').textContent = serviceName;
+      document.getElementById('pay-amount').textContent       = amount + ' Pi';
+      document.getElementById('pay-username').textContent     = state.piUser
+        ? '@' + state.piUser.username
+        : 'Not logged in';
+
+      // Reset modal state
+      document.getElementById('payment-status-box').className = 'hidden';
+      document.getElementById('payment-status-box').textContent = '';
+      document.getElementById('pay-action-row').classList.remove('hidden');
+      document.getElementById('pay-done-row').classList.add('hidden');
+
+      document.getElementById('pay-modal-overlay').classList.remove('hidden');
+    }
+
+    function closePayModal(e) {
+      if (e && e.target !== document.getElementById('pay-modal-overlay')) return;
+      document.getElementById('pay-modal-overlay').classList.add('hidden');
+    }
+
+    async function confirmPayment() {
+      if (!state.sdkInitialized || !state.authenticated) {
+        alert('Please login with Pi first.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-pay-confirm');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Processing...';
+
+      setPayStatus('pending', 'Waiting for Pi Browser approval...');
+
+      const paymentData = {
+        amount:   state.currentPayment.amount,
+        memo:     'Eservices: ' + state.currentPayment.service,
+        metadata: {
+          serviceType: state.currentPayment.type,
+          service:     state.currentPayment.service,
+          app:         'Eservices',
+          timestamp:   new Date().toISOString()
+        }
+      };
+
+      Pi.createPayment(paymentData, {
+
+        // ── Called when Pi needs backend approval ─────────────
+        onReadyForServerApproval: async function(paymentId) {
+          setPayStatus('pending', 'Approving payment on server...');
+          try {
+            const res = await fetch('/api/pi/approve-payment', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ paymentId })
+            });
+            if (!res.ok) throw new Error('Approval failed: ' + res.statusText);
+          } catch(err) {
+            console.error('Approval error:', err);
+            setPayStatus('error', 'Server approval failed: ' + err.message);
+          }
+        },
+
+        // ── Called when Pi blockchain confirms ────────────────
+        onReadyForServerCompletion: async function(paymentId, txid) {
+          setPayStatus('pending', 'Completing transaction...');
+          try {
+            const res = await fetch('/api/pi/complete-payment', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ paymentId, txid })
+            });
+            if (!res.ok) throw new Error('Completion failed');
+
+            setPayStatus('success',
+              'Payment complete!\nTX: ' + txid.substring(0, 20) + '...\n' +
+              state.currentPayment.service + ' request submitted.'
+            );
+
+            document.getElementById('pay-action-row').classList.add('hidden');
+            document.getElementById('pay-done-row').classList.remove('hidden');
+
+          } catch(err) {
+            setPayStatus('error', 'Completion error: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = 'Retry';
+          }
+        },
+
+        // ── User cancelled ────────────────────────────────────
+        onCancel: function(paymentId) {
+          setPayStatus('cancelled', 'Payment cancelled.');
+          btn.disabled = false;
+          btn.innerHTML = '&#960; Pay Now';
+        },
+
+        // ── SDK error ─────────────────────────────────────────
+        onError: function(error, payment) {
+          console.error('Pi payment error:', error);
+          setPayStatus('error', 'Payment error: ' + (error.message || 'Unknown'));
+          btn.disabled = false;
+          btn.innerHTML = '&#960; Pay Now';
+        }
+      });
+    }
+
+    function setPayStatus(type, message) {
+      const box = document.getElementById('payment-status-box');
+      box.className  = type;
+      box.textContent = message;
+      box.style.display = 'block';
+    }
+
+    // ── Section switcher ─────────────────────────────────────
+    function showSection(name) {
+      // All nav buttons
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+      // For now just show an alert for sub-sections
+      if (name !== 'home') {
+        alert('Section: ' + name + '\n\nComing soon in this build. Use the full Next.js app for all sections.');
+      }
+    }
+
+    // ── Boot sequence ────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+      // Small delay to let the Pi SDK script parse
+      setTimeout(initPiSDK, 300);
+    });
+  </script>
+
+</body>
+</html>

@@ -5,7 +5,7 @@
 ### 1. Created Route Handler for Validation File
 - **File**: `app/validation-key.txt/route.ts`
 - **Purpose**: Serves the validation key as plain text response
-- **URL**: https://eservices5527.pinet.com/validation-key.txt
+- **URL**: https://eservices2553.pinet.com/validation-key.txt
 - **Content-Type**: text/plain
 - **Key**: 8f4db23a293665a95a386be51615749ff72232ca1bd3d2b00754162c1293f9e9fa515e354133f94c2f6299f613ea3f77a5e62c1a5c54a77b0eb364ed6f9a04f5
 
@@ -48,7 +48,7 @@ docker-compose up -d
 
 ### 1. Test Validation File
 ```bash
-curl https://eservices5527.pinet.com/validation-key.txt
+curl https://eservices2553.pinet.com/validation-key.txt
 ```
 
 Expected output (plain text):

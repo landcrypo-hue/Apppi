@@ -51,7 +51,7 @@ deploy_production:
     - ssh $DEPLOY_USER@$DEPLOY_SERVER "docker image prune -af"
   environment:
     name: production
-    url: https://eservices5527.pinet.com
+    url: https://eservices2553.pinet.com
   only:
     - main
 
@@ -69,6 +69,6 @@ deploy_staging:
     - ssh $DEPLOY_USER@$STAGING_SERVER "cd /opt/eservices-staging && docker-compose pull && docker-compose up -d"
   environment:
     name: staging
-    url: https://staging.eservices5527.pinet.com
+    url: https://staging.eservices2553.pinet.com
   only:
     - develop

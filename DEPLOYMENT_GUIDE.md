@@ -2,13 +2,13 @@
 
 ## Overview
 
-This guide provides complete instructions for deploying the Eservices Pi Network app to your Pinet server at `eservices5527.pinet.com`.
+This guide provides complete instructions for deploying the Eservices Pi Network app to your Pinet server at `eservices2553.pinet.com`.
 
 ## Prerequisites
 
 - Pinet server with Ubuntu 20.04+ or Debian 11+
 - Root or sudo access to the server
-- Domain configured: `eservices5527.pinet.com`
+- Domain configured: `eservices2553.pinet.com`
 - Pi Network API Key (from Pi Developer Portal)
 - GitLab account and repository
 
@@ -44,7 +44,7 @@ This guide provides complete instructions for deploying the Eservices Pi Network
 ### 1.1 Connect to your server
 
 \`\`\`bash
-ssh root@eservices5527.pinet.com
+ssh root@eservices2553.pinet.com
 \`\`\`
 
 ### 1.2 Run the setup script
@@ -91,7 +91,7 @@ Go to Settings > CI/CD > Variables and add:
 | `CI_REGISTRY` | `registry.gitlab.com` | Yes | No |
 | `CI_REGISTRY_USER` | Your GitLab username | Yes | No |
 | `CI_REGISTRY_PASSWORD` | Your GitLab token | Yes | Yes |
-| `DEPLOY_SERVER` | `eservices5527.pinet.com` | Yes | No |
+| `DEPLOY_SERVER` | `eservices2553.pinet.com` | Yes | No |
 | `DEPLOY_USER` | `root` or deployment user | Yes | No |
 | `SSH_PRIVATE_KEY` | Your SSH private key | Yes | Yes |
 | `PI_API_KEY` | Your Pi Network API key | Yes | Yes |
@@ -105,7 +105,7 @@ On your local machine:
 ssh-keygen -t ed25519 -C "gitlab-ci@eservices"
 
 # Copy public key to server
-ssh-copy-id -i ~/.ssh/id_ed25519.pub root@eservices5527.pinet.com
+ssh-copy-id -i ~/.ssh/id_ed25519.pub root@eservices2553.pinet.com
 
 # Add private key to GitLab CI/CD variables
 cat ~/.ssh/id_ed25519  # Copy this to SSH_PRIVATE_KEY variable
@@ -119,7 +119,7 @@ Ensure your domain points to your server:
 
 \`\`\`bash
 # Check DNS configuration
-dig eservices5527.pinet.com
+dig eservices2553.pinet.com
 \`\`\`
 
 ### 3.2 Generate SSL Certificate
@@ -129,18 +129,18 @@ dig eservices5527.pinet.com
 systemctl stop nginx
 
 # Generate certificate
-certbot certonly --standalone -d eservices5527.pinet.com
+certbot certonly --standalone -d eservices2553.pinet.com
 
 # Copy certificates to project directory
-cp /etc/letsencrypt/live/eservices5527.pinet.com/fullchain.pem /opt/eservices/nginx/ssl/
-cp /etc/letsencrypt/live/eservices5527.pinet.com/privkey.pem /opt/eservices/nginx/ssl/
+cp /etc/letsencrypt/live/eservices2553.pinet.com/fullchain.pem /opt/eservices/nginx/ssl/
+cp /etc/letsencrypt/live/eservices2553.pinet.com/privkey.pem /opt/eservices/nginx/ssl/
 \`\`\`
 
 ### 3.3 Setup auto-renewal
 
 \`\`\`bash
 # Add cron job for renewal
-echo "0 0 * * * certbot renew --quiet && cp /etc/letsencrypt/live/eservices5527.pinet.com/*.pem /opt/eservices/nginx/ssl/ && docker-compose -f /opt/eservices/docker-compose.yml restart nginx" | crontab -
+echo "0 0 * * * certbot renew --quiet && cp /etc/letsencrypt/live/eservices2553.pinet.com/*.pem /opt/eservices/nginx/ssl/ && docker-compose -f /opt/eservices/docker-compose.yml restart nginx" | crontab -
 \`\`\`
 
 ## Step 4: Application Deployment
@@ -165,7 +165,7 @@ nano .env
 Required variables:
 \`\`\`env
 NODE_ENV=production
-NEXT_PUBLIC_APP_URL=https://eservices5527.pinet.com
+NEXT_PUBLIC_APP_URL=https://eservices2553.pinet.com
 PI_API_KEY=your_actual_pi_api_key_here
 PI_SANDBOX_MODE=true
 NEXT_PUBLIC_PI_APP_ID=eservices-pi-app
@@ -189,11 +189,11 @@ chmod +x scripts/deploy.sh
 2. Click "Create New App"
 3. Fill in details from `app.json`:
    - App Name: Eservices
-   - Frontend URL: `https://eservices5527.pinet.com`
-   - Backend URL: `https://eservices5527.pinet.com/api`
+   - Frontend URL: `https://eservices2553.pinet.com`
+   - Backend URL: `https://eservices2553.pinet.com/api`
    - Redirect URIs:
-     - `https://eservices5527.pinet.com/auth/callback`
-     - `https://eservices5527.pinet.com/payments/callback`
+     - `https://eservices2553.pinet.com/auth/callback`
+     - `https://eservices2553.pinet.com/payments/callback`
 
 4. Copy your API Key and update `.env` file on server
 
@@ -253,16 +253,16 @@ docker-compose logs -f nginx
 
 \`\`\`bash
 # Health check
-curl https://eservices5527.pinet.com/api/health
+curl https://eservices2553.pinet.com/api/health
 
 # Pi SDK test
-curl https://eservices5527.pinet.com/test-pi
+curl https://eservices2553.pinet.com/test-pi
 \`\`\`
 
 ### 7.3 Test in Pi Browser
 
 1. Open Pi Browser on mobile device
-2. Navigate to `https://eservices5527.pinet.com`
+2. Navigate to `https://eservices2553.pinet.com`
 3. Verify Pi SDK loads (check diagnostics)
 4. Test login with Pi
 5. Test payment flow
@@ -287,7 +287,7 @@ docker-compose exec nginx cat /etc/nginx/nginx.conf | grep Content-Security-Poli
 **Solution:**
 \`\`\`bash
 # Verify certificate
-openssl s_client -connect eservices5527.pinet.com:443 -servername eservices5527.pinet.com
+openssl s_client -connect eservices2553.pinet.com:443 -servername eservices2553.pinet.com
 
 # Renew certificate
 certbot renew --force-renewal
@@ -317,7 +317,7 @@ docker-compose config
 
 \`\`\`bash
 # Test SSH from GitLab runner
-ssh -i ~/.ssh/id_ed25519 root@eservices5527.pinet.com
+ssh -i ~/.ssh/id_ed25519 root@eservices2553.pinet.com
 \`\`\`
 
 ## Monitoring
@@ -326,7 +326,7 @@ ssh -i ~/.ssh/id_ed25519 root@eservices5527.pinet.com
 
 \`\`\`bash
 # Application status
-curl https://eservices5527.pinet.com/api/health
+curl https://eservices2553.pinet.com/api/health
 
 # Container stats
 docker stats
@@ -389,8 +389,8 @@ kubectl scale deployment eservices-deployment --replicas=5 -n pi-apps
 ## Support
 
 For issues or questions:
-- Email: support@eservices5527.pinet.com
-- Documentation: https://eservices5527.pinet.com/docs
+- Email: support@eservices2553.pinet.com
+- Documentation: https://eservices2553.pinet.com/docs
 - Pi Network: https://developers.minepi.com
 
 ## Next Steps

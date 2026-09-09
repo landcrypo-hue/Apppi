@@ -4,7 +4,7 @@
 
 The domain validation file has been created at:
 - **File Location**: `public/validation-key.txt`
-- **Public URL**: `https://eservices5527.pinet.com/validation-key.txt`
+- **Public URL**: `https://eservices2553.pinet.com/validation-key.txt`
 - **Validation Key**: `8f4db23a293665a95a386be51615749ff72232ca1bd3d2b00754162c1293f9e9fa515e354133f94c2f6299f613ea3f77a5e62c1a5c54a77b0eb364ed6f9a04f5`
 
 ## Deployment Steps
@@ -31,23 +31,23 @@ After deployment, test that the validation file is publicly accessible:
 
 \`\`\`bash
 # Using curl
-curl https://eservices5527.pinet.com/validation-key.txt
+curl https://eservices2553.pinet.com/validation-key.txt
 
 # Using wget
-wget https://eservices5527.pinet.com/validation-key.txt -O -
+wget https://eservices2553.pinet.com/validation-key.txt -O -
 
 # Expected output:
 # 8f4db23a293665a95a386be51615749ff72232ca1bd3d2b00754162c1293f9e9fa515e354133f94c2f6299f613ea3f77a5e62c1a5c54a77b0eb364ed6f9a04f5
 \`\`\`
 
 Or open in browser:
-- https://eservices5527.pinet.com/validation-key.txt
+- https://eservices2553.pinet.com/validation-key.txt
 
 ### 3. Complete Pi Network Verification
 
 1. Go to Pi Developer Portal: https://develop.pi.network
 2. Navigate to your app settings
-3. Enter your domain: `eservices5527.pinet.com`
+3. Enter your domain: `eservices2553.pinet.com`
 4. Click "Verify Domain"
 5. Pi Network will check for the validation file at the URL above
 
@@ -108,7 +108,7 @@ kubectl exec -it <pod-name> -n eservices -- curl http://localhost:3000/validatio
 **Clear Cache:**
 \`\`\`bash
 # Clear CDN cache if applicable
-curl -X PURGE https://eservices5527.pinet.com/validation-key.txt
+curl -X PURGE https://eservices2553.pinet.com/validation-key.txt
 
 # Clear browser cache or test in incognito mode
 \`\`\`
@@ -125,7 +125,7 @@ curl -X PURGE https://eservices5527.pinet.com/validation-key.txt
 - [ ] File created at `public/validation-key.txt`
 - [ ] Contains exactly the validation key (no extra spaces/newlines)
 - [ ] Application built successfully
-- [ ] Application deployed to eservices5527.pinet.com
+- [ ] Application deployed to eservices2553.pinet.com
 - [ ] File accessible via browser
 - [ ] File accessible via curl/wget
 - [ ] Pi Network domain verification completed

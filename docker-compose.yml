@@ -11,7 +11,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_APP_URL=https://eservices5527.pinet.com
+      - NEXT_PUBLIC_APP_URL=https://eservices2553.pinet.com
       - PI_API_KEY=${PI_API_KEY}
       - PI_SANDBOX_MODE=true
     networks:

@@ -167,7 +167,7 @@ PI_API_KEY=your_pi_api_key_here
 NEXT_PUBLIC_PI_APP_ID=your_app_id_here
 
 # App URLs
-NEXT_PUBLIC_APP_URL=https://eservices5527.pinet.com
+NEXT_PUBLIC_APP_URL=https://eservices2553.pinet.com
 ```
 
 ## Deployment Checklist

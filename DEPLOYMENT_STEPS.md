@@ -3,7 +3,7 @@
 ## Current Status
 ✅ validation-key.txt created in `/public/` folder
 ✅ Next.js configured to serve static files
-❌ **NOT YET DEPLOYED** to eservices5527.pinet.com
+❌ **NOT YET DEPLOYED** to eservices2553.pinet.com
 
 ## Deployment Methods
 
@@ -22,11 +22,11 @@ Your GitLab CI/CD pipeline will automatically deploy the app.
 npm run build
 
 # 2. Upload to your server (replace with your credentials)
-scp -r .next/standalone/* user@eservices5527.pinet.com:/var/www/eservices/
-scp -r public/* user@eservices5527.pinet.com:/var/www/eservices/public/
+scp -r .next/standalone/* user@eservices2553.pinet.com:/var/www/eservices/
+scp -r public/* user@eservices2553.pinet.com:/var/www/eservices/public/
 
 # 3. Restart the app on server
-ssh user@eservices5527.pinet.com "pm2 restart eservices"
+ssh user@eservices2553.pinet.com "pm2 restart eservices"
 \`\`\`
 
 ### Method 3: Docker Deployment
@@ -38,7 +38,7 @@ docker build -t eservices:latest .
 docker push your-registry/eservices:latest
 
 # 3. Deploy on server
-ssh user@eservices5527.pinet.com "cd /var/www/eservices && docker-compose pull && docker-compose up -d"
+ssh user@eservices2553.pinet.com "cd /var/www/eservices && docker-compose pull && docker-compose up -d"
 \`\`\`
 
 ### Method 4: Direct File Upload (Quickest)
@@ -46,7 +46,7 @@ If you just need the validation file deployed quickly:
 
 \`\`\`bash
 # Upload only the validation file
-scp public/validation-key.txt user@eservices5527.pinet.com:/var/www/eservices/public/
+scp public/validation-key.txt user@eservices2553.pinet.com:/var/www/eservices/public/
 
 # Or use SFTP/FTP client to upload:
 # From: public/validation-key.txt
@@ -59,13 +59,13 @@ After deployment, test the file:
 
 \`\`\`bash
 # 1. Check if file is accessible
-curl https://eservices5527.pinet.com/validation-key.txt
+curl https://eservices2553.pinet.com/validation-key.txt
 
 # Expected output:
 # 8f4db23a293665a95a386be51615749ff72232ca1bd3d2b00754162c1293f9e9fa515e354133f94c2f6299f613ea3f77a5e62c1a5c54a77b0eb364ed6f9a04f5
 
 # 2. Verify exact content
-curl -s https://eservices5527.pinet.com/validation-key.txt | wc -c
+curl -s https://eservices2553.pinet.com/validation-key.txt | wc -c
 # Should output: 129 (128 chars + newline)
 \`\`\`
 

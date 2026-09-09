@@ -26,7 +26,7 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: NEXT_PUBLIC_APP_URL
-          value: "https://eservices5527.pinet.com"
+          value: "https://eservices2553.pinet.com"
         - name: PI_API_KEY
           valueFrom:
             secretKeyRef:
@@ -85,10 +85,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - eservices5527.pinet.com
+    - eservices2553.pinet.com
     secretName: eservices-tls
   rules:
-  - host: eservices5527.pinet.com
+  - host: eservices2553.pinet.com
     http:
       paths:
       - path: /

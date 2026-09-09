@@ -102,7 +102,7 @@ print_success "Firewall configured"
 # Setup SSL certificate
 print_info "Setting up SSL certificate..."
 print_info "Run the following command manually after DNS is configured:"
-echo "certbot certonly --nginx -d eservices5527.pinet.com"
+echo "certbot certonly --nginx -d eservices2553.pinet.com"
 
 print_success "Server setup completed! 🎉"
 print_info "Next steps:"

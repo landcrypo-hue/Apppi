@@ -194,7 +194,7 @@ app/page.tsx (first component in return statement)
 - [ ] Add `<PiSDKInitializer />` to AppWrapper
 - [ ] Import: `import { PiSDKInitializer } from "@/components/pi-sdk-initializer"`
 - [ ] Commit and push changes to GitLab
-- [ ] Deploy to https://eservices5527.pinet.com
+- [ ] Deploy to https://eservices2553.pinet.com
 - [ ] Test in Pi Browser
 - [ ] Check console logs (F12)
 - [ ] Verify diagnostics show all YES

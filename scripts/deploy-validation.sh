@@ -18,8 +18,8 @@ git push origin main
 
 # Option B: If using direct SSH/SCP
 # echo "📤 Uploading via SCP..."
-# scp -r .next/standalone/* user@eservices5527.pinet.com:/var/www/eservices/
-# scp public/validation-key.txt user@eservices5527.pinet.com:/var/www/eservices/public/
+# scp -r .next/standalone/* user@eservices2553.pinet.com:/var/www/eservices/
+# scp public/validation-key.txt user@eservices2553.pinet.com:/var/www/eservices/public/
 
 # Option C: If using Docker
 # echo "🐳 Building and pushing Docker image..."

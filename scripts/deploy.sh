@@ -83,7 +83,7 @@ sleep 10
 # Check if containers are running
 if docker-compose ps | grep -q "Up"; then
     print_success "Deployment successful!"
-    print_info "Application is running at: https://eservices5527.pinet.com"
+    print_info "Application is running at: https://eservices2553.pinet.com"
     
     # Show container status
     echo ""

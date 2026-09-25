@@ -10,7 +10,7 @@ const nextConfig = {
     unoptimized: true,
   },
   // Enable standalone output for Docker
-  output: 'standalone',
+  output: process.env.NETLIFY ? undefined : 'standalone',
   async headers() {
     return [
       {

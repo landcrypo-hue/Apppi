@@ -25,7 +25,7 @@ git push origin main
 # echo "🐳 Building and pushing Docker image..."
 # docker build -t eservices:latest .
 # docker push your-registry/eservices:latest
-# ssh user@eservices5527.pinet.com "docker-compose pull && docker-compose up -d"
+# ssh user@eservices2553.pinet.com "docker-compose pull && docker-compose up -d"
 
 echo "✅ Deployment initiated!"
-echo "🔍 Test the file at: https://eservices5527.pinet.com/validation-key.txt"
+echo "🔍 Test the file at: https://eservices2553.pinet.com/validation-key.txt"

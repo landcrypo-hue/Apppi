@@ -1,6 +1,10 @@
-[build]
-  command = "npm run build"
+build]
+  command = "pnpm build"
   publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_FLAGS = "--frozen-lockfile"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

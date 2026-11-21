@@ -968,17 +968,24 @@
     }
 
     // ── Section switcher ─────────────────────────────────────
-    function showSection(name) {
-      // All nav buttons
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+function showSection(name) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
-      // For now just show an alert for sub-sections
-      if (name !== 'home') {
-        alert('Section: ' + name + '\n\nComing soon in this build. Use the full Next.js app for all sections.');
-      }
-    }
+  if (name === 'home') {
+    window.location.href = '/';
+    return;
+  }
 
-    // ── Boot sequence ────────────────────────────────────────
+  const routes = {
+    profile: '/profile',
+    documents: '/services/documents',
+    support: '/services/support',
+    requests: '/services/requests',
+    services: '/services'
+  };
+
+  window.location.href = routes[name] || '/services';
+}    // ── Boot sequence ────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function() {
       // Small delay to let the Pi SDK script parse
       setTimeout(initPiSDK, 300);

@@ -1,0 +1,8 @@
+npm : Impossible de charger le fichier C:\Program Files\nodejs\npm.ps1, car l'ex‚cution de scripts est d‚sactiv‚e sur 
+ce systŠme. Pour plus d'informations, consultez about_Execution_Policies … l'adresse 
+https://go.microsoft.com/fwlink/?LinkID=135170.
+Au caractŠre Ligne:1 : 432
++ ...  } catch {} }, []);"; Set-Content -Path $p -Value $lines; npm run bui ...
++                                                               ~~~
+    + CategoryInfo          : Erreur de s‚curit‚ÿ: (:) [], PSSecurityException
+    + FullyQualifiedErrorId : UnauthorizedAccess

@@ -201,7 +201,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
       setApiAuthToken(accessToken);
     }
 
-    setUserData(loginRes.data);
+    setUserData(LoginRes.data); try { localStorage.setItem('eservices_pi_user_data', JSON.stringify(LoginRes.data)); } catch {}
   };
 
   const getErrorMessage = (error: unknown): string => {
@@ -265,7 +265,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
         await authenticateViaPiSdk();
       }
 
-      setIsAuthenticated(true);
+      setIsAuthenticated(true); try { if (userData) localStorage.setItem('eservices_pi_user_data', JSON.stringify(userData)); } catch {}
       setHasError(false);
     } catch (err) {
       console.error("❌ Pi Network initialization failed:", err);
@@ -276,7 +276,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => { /* Auto authenticate disabled to prevent duplicate prompts */ }, []);
+useEffect(() => { /* Auto authenticate disabled to prevent duplicate prompts */ try { const saved = localStorage.getItem('eservices_pi_user_data'); if (saved) { const parsed = JSON.parse(saved); if (parsed) { setUserData(parsed); setIsAuthenticated(true); setAuthMessage(''); setHasError(false); } } } catch {} }, []);
 
   const value: PiAuthContextType = {
     isAuthenticated,

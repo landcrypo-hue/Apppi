@@ -276,9 +276,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    initializePiAndAuthenticate();
-  }, []);
+  useEffect(() => { /* Auto authenticate disabled to prevent duplicate prompts */ }, []);
 
   const value: PiAuthContextType = {
     isAuthenticated,

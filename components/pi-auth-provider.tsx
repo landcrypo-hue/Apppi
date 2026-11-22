@@ -26,7 +26,7 @@ const PiAuthContext = createContext<PiAuthContextType>({
 })
 
 export function PiAuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<PiUser | null>(null)
+  const [user, setUser] = useState<PiUser | null>(() => { try { if (typeof window === 'undefined') return null; const raw = localStorage.getItem('pi_user'); return raw ? JSON.parse(raw) : null; } catch { return null; } });
   const [isLoading, setIsLoading] = useState(false)
   const [sdkAvailable, setSdkAvailable] = useState(false)
   const [error, setError] = useState<string | null>(null)

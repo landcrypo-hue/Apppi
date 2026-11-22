@@ -1,25 +1,15 @@
-"use client"
-
-import { Header } from "@/components/header"
-import { BottomNav } from "@/components/bottom-nav"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-  Shield,
-  CreditCard,
-  Bell,
-  Lock,
-  Languages,
-  Moon,
-  LogOut,
-  ChevronRight,
-  Fingerprint,
-  Wallet,
-  Settings,
-} from "lucide-react"
+"use client";
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/header";
+import { BottomNav } from "@/components/bottom-nav";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { usePiAuth } from "@/contexts/pi-auth-context";
+import { AB, AB123456, Account, Add, Ahmed, Balance, Bell, Benali, Biometric, Change, ChevronRight, CIN, CreditCard, Dark, English, FFC107, Fingerprint, Funds, Identity, Language, Languages, Lock, Login, LogOut, Manage, Methods, Mode, Moon, Notifications, Password, Payment, Pi, Preferences, Privacy, Profile, Secure, Security, Settings, Shield, Vault, Verified, Wallet } from "lucide-react";
 
 export default function ProfilePage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -68,7 +58,7 @@ export default function ProfilePage() {
             <h3 className="font-semibold text-sm text-muted-foreground px-2">Account Settings</h3>
             <Card className="divide-y">
               <Button variant="ghost" className="w-full justify-between h-auto py-4 px-4" asChild>
-                <a href="/services/identity">
+                <a href="/services/identity" onClick={(e) => { e.preventDefault(); router.push("/services/identity"); }}>
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5 text-muted-foreground" />
                     <div className="text-left">
@@ -161,10 +151,10 @@ export default function ProfilePage() {
             </Card>
           </div>
 
-          {/* Logout */}
+          {/* LogOut */}
           <Button variant="outline" className="w-full text-destructive bg-transparent" size="lg">
             <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            LogOut
           </Button>
         </div>
       </main>

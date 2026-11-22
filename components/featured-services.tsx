@@ -1,4 +1,5 @@
-"use client"
+"use client";
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button"
 import { FileText, CreditCard, Home, User } from "lucide-react"
 
@@ -34,6 +35,7 @@ const featured = [
 ]
 
 export function FeaturedServices() {
+  const router = useRouter();
   return (
     <section className="container px-4 py-6">
       <div className="mb-4">
@@ -48,7 +50,7 @@ export function FeaturedServices() {
             className="h-auto flex-col gap-3 p-4 hover:bg-accent bg-transparent"
             asChild
           >
-            <a href={service.href}>
+            <a href={service.href} onClick={(e) => { e.preventDefault(); router.push(service.href); }}>
               <div className={`${service.color} p-3 rounded-lg text-white`}>
                 <service.icon className="h-6 w-6" />
               </div>

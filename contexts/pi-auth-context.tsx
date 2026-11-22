@@ -173,11 +173,11 @@ function requestParentCredentials(): Promise<{ accessToken: string; appId: strin
 }
 
 export function PiAuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => { try { if (typeof window === 'undefined') return false; const raw = localStorage.getItem('eservices_pi_user_data'); return raw ? Boolean(JSON.parse(raw)) : false; } catch { return false; } });
   const [authMessage, setAuthMessage] = useState("Initializing Pi Network...");
   const [hasError, setHasError] = useState(false);
   const [piAccessToken, setPiAccessToken] = useState<string | null>(null);
-  const [userData, setUserData] = useState<LoginDTO | null>(null);
+  const [userData, setUserData] = useState<LoginDTO | null>(() => { try { if (typeof window === 'undefined') return null; const raw = localStorage.getItem('eservices_pi_user_data'); return raw ? JSON.parse(raw) : null; } catch { return null; } });
   const [error, setError] = useState<string | null>(null);
 
   const authenticateAndLogin = async (accessToken: string, appId: string | null): Promise<void> => {

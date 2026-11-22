@@ -103,7 +103,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
 
       if (piUser) {
         setUser(piUser)
-        localStorage.setItem("pi_user", JSON.stringify(piUser))
+        localStorage.setItem("pi_user", JSON.stringify(piUser)); localStorage.setItem("eservices_pi_user_data", JSON.stringify(piUser))
         console.log("[Pi Auth] ✓ Authenticated:", piUser.username, "| Scopes:", piUser.scopes.join(", "))
       }
     } catch (error: any) {

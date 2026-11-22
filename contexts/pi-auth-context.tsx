@@ -201,7 +201,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
       setApiAuthToken(accessToken);
     }
 
-    setUserData(LoginRes.data); try { localStorage.setItem('eservices_pi_user_data', JSON.stringify(LoginRes.data)); } catch {}
+    setUserData(LoginRes.data); try { localStorage.setItem('eservices_pi_user_data', JSON.stringify(LoginRes.data)); localStorage.setItem('pi_user', JSON.stringify(LoginRes.data)); } catch {}
   };
 
   const getErrorMessage = (error: unknown): string => {

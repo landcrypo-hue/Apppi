@@ -172,6 +172,7 @@ function requestParentCredentials(): Promise<{ accessToken: string; appId: strin
   });
 }
 
+const saveAuthSession = (rawData: string) => { try { localStorage.setItem('eservices_pi_user_data', rawData); localStorage.setItem('pi_user', rawData); } catch {} try { sessionStorage.setItem('eservices_pi_user_data', rawData); } catch {} try { window.name = 'ESERVICES_AUTH:' + encodeURIComponent(rawData); } catch {} }; const loadAuthSession = (): any | null => { try { const ls = localStorage.getItem('eservices_pi_user_data') || localStorage.getItem('pi_user'); if (ls) return JSON.parse(ls); } catch {} try { const ss = sessionStorage.getItem('eservices_pi_user_data'); if (ss) return JSON.parse(ss); } catch {} try { if (window.name && window.name.startsWith('ESERVICES_AUTH:')) { return JSON.parse(decodeURIComponent(window.name.slice('ESERVICES_AUTH:'.length))); } } catch {} return null; };
 export function PiAuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => { try { if (typeof window === 'undefined') return false; const raw = localStorage.getItem('eservices_pi_user_data'); return raw ? Boolean(JSON.parse(raw)) : false; } catch { return false; } });
   const [authMessage, setAuthMessage] = useState("Initializing Pi Network...");
@@ -201,7 +202,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
       setApiAuthToken(accessToken);
     }
 
-    setUserData(LoginRes.data); try { localStorage.setItem('eservices_pi_user_data', JSON.stringify(LoginRes.data)); localStorage.setItem('pi_user', JSON.stringify(LoginRes.data)); } catch {}
+    setUserData(LoginRes.data); saveAuthSession(JSON.stringify(LoginRes.data)); try { localStorage.setItem('eservices_pi_user_data', JSON.stringify(LoginRes.data)); localStorage.setItem('pi_user', JSON.stringify(LoginRes.data)); } catch {}
   };
 
   const getErrorMessage = (error: unknown): string => {
@@ -276,7 +277,7 @@ export function PiAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-useEffect(() => { /* Auto authenticate disabled to prevent duplicate prompts */ try { const saved = localStorage.getItem('eservices_pi_user_data'); if (saved) { const parsed = JSON.parse(saved); if (parsed) { setUserData(parsed); setIsAuthenticated(true); setAuthMessage(''); setHasError(false); } } } catch {} }, []);
+useEffect(() => { /* Auto authenticate disabled to prevent duplicate prompts */ try { const parsed = loadAuthSession(); if (parsed) { setUserData(parsed); setIsAuthenticated(true); setAuthMessage(''); setHasError(false); } } catch {} }, []);
 
   const value: PiAuthContextType = {
     isAuthenticated,

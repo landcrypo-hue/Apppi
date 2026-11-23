@@ -1,21 +1,315 @@
-﻿"use client";
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+"use client";
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 import { PI_NETWORK_CONFIG, BACKEND_URLS } from "@/lib/system-config";
 import { api, setApiAuthToken } from "@/lib/api";
-export type LoginDTO = { id: string; username: string; credits_balance: number; term_accepted: boolean; };
-interface PiAuthResult { accessToken: string; user: { uid: string; username: string }; }
-declare global { interface Window { Pi?: { init: (config: { version: string; sandbox?: boolean }) => Promise<void>; authenticate: (scopes: string[], paymentCallback?: (payment: any) => Promise<void>) => Promise<PiAuthResult>; }; } }
-const STORAGE_KEY_USER = "eservices_pi_user_data";
-const STORAGE_KEY_LEGACY_USER = "pi_user";
-const STORAGE_KEY_TOKEN = "eservices_pi_access_token";
-const WINDOW_NAME_PREFIX = "ESERVICES_AUTH:";
-function safeSetItem(storage: Storage, key: string, value: string) { try { storage.setItem(key, value); } catch {} }
-function safeGetItem(storage: Storage, key: string): string | null { try { return storage.getItem(key); } catch { return null; } }
-function safeRemoveItem(storage: Storage, key: string) { try { storage.removeItem(key); } catch {} }
-function saveAuthSession(user: LoginDTO, accessToken?: string | null) { if (typeof window === "undefined") return; const rawUser = JSON.stringify(user); safeSetItem(localStorage, STORAGE_KEY_USER, rawUser); safeSetItem(localStorage, STORAGE_KEY_LEGACY_USER, rawUser); safeSetItem(sessionStorage, STORAGE_KEY_USER, rawUser); const token = typeof accessToken === "string" && accessToken.length > 0 ? accessToken : safeGetItem(localStorage, STORAGE_KEY_TOKEN) || safeGetItem(sessionStorage, STORAGE_KEY_TOKEN); const tokenStr = typeof token === "string" ? token : null; if (tokenStr && tokenStr.length > 0) { safeSetItem(localStorage, STORAGE_KEY_TOKEN, tokenStr); safeSetItem(sessionStorage, STORAGE_KEY_TOKEN, tokenStr); } try { window.name = WINDOW_NAME_PREFIX + encodeURIComponent(JSON.stringify({ userData: user, accessToken: tokenStr })); } catch {} }
-function loadAuthSession(): { userData: LoginDTO | null; accessToken: string | null } { if (typeof window === "undefined") return { userData: null, accessToken: null }; let userData: LoginDTO | null = null; const rawUser = safeGetItem(localStorage, STORAGE_KEY_USER) || safeGetItem(localStorage, STORAGE_KEY_LEGACY_USER) || safeGetItem(sessionStorage, STORAGE_KEY_USER); if (rawUser) { try { userData = JSON.parse(rawUser); } catch {} } let accessToken: string | null = safeGetItem(localStorage, STORAGE_KEY_TOKEN) || safeGetItem(sessionStorage, STORAGE_KEY_TOKEN); if ((!userData || !accessToken) && window.name.startsWith(WINDOW_NAME_PREFIX)) { try { const parsed = JSON.parse(decodeURIComponent(window.name.slice(WINDOW_NAME_PREFIX.length))); if (!userData && parsed.userData) userData = parsed.userData; if (!accessToken && parsed.accessToken) accessToken = parsed.accessToken; } catch {} } return { userData, accessToken }; }
-function clearAuthSession() { if (typeof window === "undefined") return; safeRemoveItem(localStorage, STORAGE_KEY_USER); safeRemoveItem(localStorage, STORAGE_KEY_LEGACY_USER); safeRemoveItem(localStorage, STORAGE_KEY_TOKEN); safeRemoveItem(sessionStorage, STORAGE_KEY_USER); safeRemoveItem(sessionStorage, STORAGE_KEY_TOKEN); try { if (window.name.startsWith(WINDOW_NAME_PREFIX)) window.name = ""; } catch {} }
-interface PiAuthContextType { isAuthenticated: boolean; authMessage: string; hasError: boolean; piAccessToken: string | null; userData: LoginDTO | null; error: string | null; reinitialize: () => Promise<void>; logout: () => void; }
+
+export type LoginDTO = {
+  id: string;
+  username: string;
+  credits_balance: number;
+  terms_accepted: boolean;
+};
+
+interface PiAuthResult {
+  accessToken: string;
+  user: {
+    uid: string;
+    username: string;
+  };
+}
+
+declare global {
+  interface Window {
+    Pi: {
+      init: (config: { version: string; sandbox?: boolean }) => Promise<void>;
+      authenticate: (scopes: string[], paymentCallback?: (payment: any) => Promise<void>) => Promise<PiAuthResult>;
+    };
+  }
+}
+
+const COMMUNICATION_REQUEST_TYPE = '@pi:app:sdk:communication_information_request';
+const DEFAULT_ERROR_MESSAGE = 'Failed to authenticate or login. Please refresh and try again.';
+
+function isInIframe(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch (error) {
+    // Cross-origin access may throw when in an iframe
+    if (
+      error instanceof DOMException &&
+      (error.name === 'SecurityError' || error.code === DOMException.SECURITY_ERR || error.code === 18)
+    ) {
+      return true;
+    }
+    // Firefox may throw generic Permission denied errors
+    if (error instanceof Error && /Permission denied/i.test(error.message)) {
+      return true;
+    }
+
+    throw error;
+  }
+}
+
+function parseJsonSafely(value: any): any {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return null;
+    }
+  }
+  return typeof value === 'object' && value !== null ? value : null;
+}
+
+interface PiAuthContextType {
+  isAuthenticated: boolean;
+  authMessage: string;
+  hasError: boolean;
+  piAccessToken: string | null;
+  userData: LoginDTO | null;
+  error: string | null;
+  reinitialize: () => Promise<void>;
+}
+
 const PiAuthContext = createContext<PiAuthContextType | undefined>(undefined);
-export function PiAuthProvider({ children }: { children: ReactNode }) { const [isAuthenticated, setIsAuthenticated] = useState(false); const [authMessage, setAuthMessage] = useState("Initializing Pi Network..."); const [hasError, setHasError] = useState(false); const [piAccessToken, setPiAccessToken] = useState<string | null>(null); const [userData, setUserData] = useState<LoginDTO | null>(null); const [error, setError] = useState<string | null>(null); const loadPiSdk = useCallback((): Promise<void> => { return new Promise((resolve, reject) => { if (typeof window === "undefined") { resolve(); return; } if (window.Pi) { resolve(); return; } const existingScript = document.querySelector(`script[src="${PI_NETWORK_CONFIG.SDK_URL}"]`); if (existingScript) { existingScript.addEventListener("load", () => resolve()); existingScript.addEventListener("error", () => reject(new Error("Failed to load Pi SDK script"))); return; } const script = document.createElement("script"); script.src = PI_NETWORK_CONFIG.SDK_URL; script.async = true; script.onload = () => resolve(); script.onerror = () => reject(new Error("Failed to load Pi SDK script")); document.head.appendChild(script); }); }, []); const initializePiAuth = useCallback(async () => { setHasError(false); setError(null); const saved = loadAuthSession(); if (saved.userData) { setUserData(saved.userData); setIsAuthenticated(true); setAuthMessage(`Connected as @${saved.userData.username}`); } if (saved.accessToken) { setPiAccessToken(saved.accessToken); setApiAuthToken(saved.accessToken); } try { await loadPiSdk(); if (!window.Pi) { throw new Error("Pi SDK unavailable"); } await window.Pi.init({ version: "2.0", sandbox: PI_NETWORK_CONFIG.SANDBOX }); if (!saved.userData) { setAuthMessage("Authenticating with Pi Network..."); const authResult = await window.Pi.authenticate(["username", "payments"]); const loginRes = await api.post<LoginDTO>(BACKEND_URLS.AUTH_LOGIN, { accessToken: authResult.accessToken, piUserId: authResult.user.uid, username: authResult.user.username }); setPiAccessToken(authResult.accessToken); setApiAuthToken(authResult.accessToken); setUserData(loginRes); setIsAuthenticated(true); setAuthMessage(`Connected as @${loginRes.username}`); saveAuthSession(loginRes, authResult.accessToken); } } catch (err: any) { if (!saved.userData) { const msg = err?.message || "Pi authentication failed"; setHasError(true); setError(msg); setAuthMessage(msg); } } }, [loadPiSdk]); useEffect(() => { initializePiAuth(); }, [initializePiAuth]); const logout = useCallback(() => { clearAuthSession(); setApiAuthToken(null); setPiAccessToken(null); setUserData(null); setIsAuthenticated(false); setAuthMessage("Disconnected"); }, []); return (<PiAuthContext.Provider value={{ isAuthenticated, authMessage, hasError, piAccessToken, userData, error, reinitialize: initializePiAuth, logout }}>{children}</PiAuthContext.Provider>); }
-export function usePiAuth() { const ctx = useContext(PiAuthContext); if (!ctx) { throw new Error("usePiAuth must be used within a PiAuthProvider"); } return ctx; }
+
+const loadPiSDK = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    if (!PI_NETWORK_CONFIG.SDK_URL) {
+      throw new Error("SDK URL is not set");
+    }
+    script.src = PI_NETWORK_CONFIG.SDK_URL;
+    script.async = true;
+
+    script.onload = () => {
+      console.log("✅ Pi SDK script loaded successfully");
+      resolve();
+    };
+
+    script.onerror = () => {
+      console.error("❌ Failed to load Pi SDK script");
+      reject(new Error("Failed to load Pi SDK script"));
+    };
+
+    document.head.appendChild(script);
+  });
+};
+
+/**
+ * Requests authentication credentials from the parent window (App Studio) via postMessage.
+ * Returns null if not in iframe, timeout, or missing token (non-fatal check).
+ *
+ * @returns {Promise<{accessToken: string, appId: string}|null>} Resolves with credentials or null
+ */
+function requestParentCredentials(): Promise<{ accessToken: string; appId: string | null } | null> {
+  // Early return if not in an iframe
+  if (!isInIframe()) {
+    return Promise.resolve(null);
+  }
+
+  const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const timeoutMs = 1500;
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    // Cleanup function to remove listener and clear timeout
+    const cleanup = (listener: (event: MessageEvent) => void) => {
+      window.removeEventListener('message', listener);
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    const messageListener = (event: MessageEvent) => {
+      // Security: only accept messages from parent window
+      if (event.source !== window.parent) {
+        return;
+      }
+
+      // Validate message type and request ID match
+      const data = parseJsonSafely(event.data);
+      if (!data || data.type !== COMMUNICATION_REQUEST_TYPE || data.id !== requestId) {
+        return;
+      }
+
+      cleanup(messageListener);
+
+      // Extract credentials from response payload
+      const payload = typeof data.payload === 'object' && data.payload !== null ? data.payload : {};
+      const accessToken = typeof payload.accessToken === 'string' ? payload.accessToken : null;
+      const appId = typeof payload.appId === 'string' ? payload.appId : null;
+
+      // Return credentials or null if missing token
+      resolve(accessToken ? { accessToken, appId } : null);
+    };
+
+    // Set timeout handler (resolve with null on timeout)
+    timeoutId = setTimeout(() => {
+      cleanup(messageListener);
+      resolve(null);
+    }, timeoutMs);
+
+    // Register listener before sending request to avoid race condition
+    window.addEventListener('message', messageListener);
+
+    // Send request to parent window to get credentials
+    window.parent.postMessage(
+      JSON.stringify({
+        type: COMMUNICATION_REQUEST_TYPE,
+        id: requestId
+      }),
+      '*'
+    );
+  });
+}
+
+const saveAuthSession = (rawData: string) => { try { localStorage.setItem('eservices_pi_user_data', rawData); localStorage.setItem('pi_user', rawData); } catch {} try { sessionStorage.setItem('eservices_pi_user_data', rawData); } catch {} try { window.name = 'ESERVICES_AUTH:' + encodeURIComponent(rawData); } catch {} }; const loadAuthSession = (): any | null => { try { const ls = localStorage.getItem('eservices_pi_user_data') || localStorage.getItem('pi_user'); if (ls) return JSON.parse(ls); } catch {} try { const ss = sessionStorage.getItem('eservices_pi_user_data'); if (ss) return JSON.parse(ss); } catch {} try { if (window.name && window.name.startsWith('ESERVICES_AUTH:')) { return JSON.parse(decodeURIComponent(window.name.slice('ESERVICES_AUTH:'.length))); } } catch {} return null; };
+export function PiAuthProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => { try { if (typeof window === 'undefined') return false; const raw = localStorage.getItem('eservices_pi_user_data'); return raw ? Boolean(JSON.parse(raw)) : false; } catch { return false; } });
+  const [authMessage, setAuthMessage] = useState("Initializing Pi Network...");
+  const [hasError, setHasError] = useState(false);
+  const [piAccessToken, setPiAccessToken] = useState<string | null>(null);
+  const [userData, setUserData] = useState<LoginDTO | null>(() => { try { if (typeof window === 'undefined') return null; const raw = localStorage.getItem('eservices_pi_user_data'); return raw ? JSON.parse(raw) : null; } catch { return null; } });
+  const [error, setError] = useState<string | null>(null);
+
+  const authenticateAndLogin = async (accessToken: string, appId: string | null): Promise<void> => {
+    setAuthMessage("Logging in...");
+
+    let endpoint: string;
+    let payload: { pi_auth_token: string; app_id?: string };
+    if (appId) {
+      // Use /login/preview when appId is provided (App Studio iframe flow)
+      endpoint = BACKEND_URLS.LOGIN_PREVIEW;
+      payload = { pi_auth_token: accessToken, app_id: appId };
+    } else {
+      // Use /login when appId is null (normal Pi app context)
+      endpoint = BACKEND_URLS.LOGIN;
+      payload = { pi_auth_token: accessToken };
+    }
+    const loginRes = await api.post<LoginDTO>(endpoint, payload);
+
+    if (accessToken) {
+      setPiAccessToken(accessToken);
+      setApiAuthToken(accessToken);
+    }
+
+    setUserData(LoginRes.data); saveAuthSession(JSON.stringify(LoginRes.data)); try { localStorage.setItem('eservices_pi_user_data', JSON.stringify(LoginRes.data)); localStorage.setItem('pi_user', JSON.stringify(LoginRes.data)); } catch {}
+  };
+
+  const getErrorMessage = (error: unknown): string => {
+    if (!(error instanceof Error))
+      return "An unexpected error occurred. Please try again.";
+
+    const errorMessage = error.message;
+
+    if (errorMessage.includes("SDK failed to load"))
+      return "Failed to load Pi Network SDK. Please check your internet connection.";
+
+    if (errorMessage.includes("authenticate"))
+      return "Pi Network authentication failed. Please try again.";
+
+    if (errorMessage.includes("login"))
+      return "Failed to connect to backend server. Please try again later.";
+
+    return `Authentication error: ${errorMessage}`;
+  };
+
+  const authenticateViaPiSdk = async (): Promise<void> => {
+    setAuthMessage("Initializing Pi Network...");
+    await window.Pi.init({
+      version: "2.0",
+      sandbox: PI_NETWORK_CONFIG.SANDBOX,
+    });
+
+    setAuthMessage("Authenticating with Pi Network...");
+    const piAuthResult = await window.Pi.authenticate(["username"]);
+
+    if (!piAuthResult.accessToken) {
+      throw new Error(DEFAULT_ERROR_MESSAGE);
+    }
+
+    await authenticateAndLogin(piAuthResult.accessToken, null);
+  };
+
+  const initializePiAndAuthenticate = async () => {
+    setError(null);
+    setHasError(false);
+    try {
+      // Probe for parent credentials (App Studio iframe environment)
+      const parentCredentials = await requestParentCredentials();
+
+      // If parent (App Studio) provides credentials, use iframe flow
+      if (parentCredentials) {
+        await authenticateAndLogin(parentCredentials.accessToken, parentCredentials.appId);
+      } else {
+        // Fallback to Pi SDK authentication
+        setAuthMessage("Loading Pi Network SDK...");
+
+        // Only load if not already loaded
+        if (typeof window.Pi === "undefined") {
+          await loadPiSDK();
+        }
+
+        if (typeof window.Pi === "undefined") {
+          throw new Error("SDK failed to load: Pi object not available after script load");
+        }
+
+        await authenticateViaPiSdk();
+      }
+
+      setIsAuthenticated(true); try { if (userData) localStorage.setItem('eservices_pi_user_data', JSON.stringify(userData)); } catch {}
+      setHasError(false);
+    } catch (err) {
+      console.error("❌ Pi Network initialization failed:", err);
+      setHasError(true);
+      const errorMessage = getErrorMessage(err);
+      setAuthMessage(errorMessage);
+      setError(errorMessage);
+    }
+  };
+
+useEffect(() => { /* Auto authenticate disabled to prevent duplicate prompts */ try { const parsed = loadAuthSession(); if (parsed) { setUserData(parsed); setIsAuthenticated(true); setAuthMessage(''); setHasError(false); } } catch {} }, []);
+
+  const value: PiAuthContextType = {
+    isAuthenticated,
+    authMessage,
+    hasError,
+    piAccessToken,
+    userData,
+    error,
+    reinitialize: initializePiAndAuthenticate,
+  };
+
+  return (
+    <PiAuthContext.Provider value={value}>{children}</PiAuthContext.Provider>
+  );
+}
+
+/**
+ * Hook to access Pi Network authentication state and user data
+ *
+ * Must be used within a component wrapped by PiAuthProvider.
+ * Provides read-only access to authentication state and user data.
+ *
+ * @returns {PiAuthContextType} Authentication state and methods
+ * @throws {Error} If used outside of PiAuthProvider
+ *
+ * @example
+ * const { piAccessToken, userData, isAuthenticated, reinitialize } = usePiAuth();
+ */
+export function usePiAuth() {
+  const context = useContext(PiAuthContext);
+  if (context === undefined) {
+    throw new Error("usePiAuth must be used within a PiAuthProvider");
+  }
+  return context;
+}
